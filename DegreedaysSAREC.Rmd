@@ -1,0 +1,170 @@
+---
+title: "DegreedaysSAREC"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+library(tidyverse)
+library(weathermetrics)
+library(lubridate)
+library(pollen)
+
+
+##dates when we sampeled soils###
+
+datessamp <- read.csv("C:/Users/Melissa/Dropbox/Melissa_Lauren_shared_docs/Dragnet local site/Weather near SAREC/SoilSampdates.csv")  ##
+datessamp$DATE<-as.Date(datessamp$DATE, format='%m/%d/%Y')
+
+
+Torrington <- read.csv("C:/Users/Melissa/Dropbox/Melissa_Lauren_shared_docs/Dragnet local site/Weather near SAREC/Torrington.csv")  ## dim 7683 X 8####
+
+#### remove rows w/ NA for TMAX or TMINF###
+Torrington2 <-Torrington  %>% drop_na(TMAXF)%>% drop_na(TMINF)  ## dim 7639 X 8####
+
+Torrington2$DATE<-as.Date(Torrington2$DATE, format='%m/%d/%Y')
+
+str(Torrington2)
+
+####convert to julian date####
+
+Torrington3 <-Torrington2 %>% mutate(Date2=as.POSIXlt(DATE, format = "%d-%m-%Y", tz=""))
+
+Torrington3$Jdate <- yday(Torrington3$DATE)  
+
+##extract month and year for other calculations##
+
+Torrington3$year <- year(Torrington3$DATE)  
+Torrington3$month <- month(as.POSIXlt(Torrington3$DATE, format="%Y-%m-%d")) 
+
+
+###convert F to C###
+
+#Torrington3$TEMPMAXC<-fahrenheit.to.celsius(Torrington3$TEMPMAXF)
+
+
+Torrington4<-Torrington3 %>% mutate(TMAXC=fahrenheit.to.celsius(TMAXF))%>% mutate(TMINC=fahrenheit.to.celsius(TMINF))
+
+
+```
+
+
+
+```{r plot yearly temps and precipt }
+
+maxtempplot<-ggplot(data=Torrington4)+geom_line(aes(Jdate, TMAXC, color = as.factor(year)))
+
+mintempplot<-ggplot(data=Torrington4)+geom_line(aes(Jdate, TMINC, color = as.factor(year)))
+
+
+
+```
+
+
+
+
+
+```{r plot 2021 and temp and GDD}
+
+
+####calculate GDD for year 2021##
+
+Torrington2021<-subset(Torrington4, year == "2021")
+
+
+Torrington2021$gdd2021<-gdd(tmax = Torrington2021$TMAXC, tmin = Torrington2021$TMINC, tbase = 5, tbase_max = 20, type = "C")     
+
+
+##plot growing degree days for 2021##
+
+
+GDD2021<-ggplot(data=Torrington2021)+geom_line(aes(Jdate, gdd2021), color="black")+ylab("Growing degree days (base = 5c)")
+
+Tempminmax<-ggplot(data=Torrington2021)+geom_line(aes(Jdate, TMAXC), color="red")+geom_line(aes(Jdate, TMINC), color="blue")+ylab("Temperature (C)")
+
+
+```
+
+
+
+```{r plot 2021 and 2022 with sampling}
+
+
+####calculate GDD for year 2021##
+
+Torrington20212022<-subset(Torrington4, year == "2021"|year=="2022")
+
+Torrington20212022_2<-subset(Torrington20212022, DATE > "2021-05-01")
+
+##plot temp min and max##
+
+Torrington20212022_2$Date2 <- ymd(Torrington20212022_2$Date2)
+
+
+Tempminmax<-ggplot(data=Torrington20212022_2)+geom_line(aes(Date2, TMAXC), color="red")+geom_line(aes(Date2, TMINC), color="blue")+ylab("Air Temperature (C)")+xlab("")+ scale_x_date(date_labels = "%b-%d-%y")+geom_vline(data=datessamp, aes(xintercept=datessamp$DATE, color=Season))+ theme_classic() 
+
+
+
+jpeg("C:/Users/Melissa/Dropbox/Melissa_Lauren_shared_docs/Dragnet local site/Weather near SAREC/Soilsamp.jpeg", width = 6, height = 3, units = 'in', res = 600)
+Tempminmax
+dev.off()
+
+
+
+```
+
+
+
+
+
+```{r GDD for each year }
+
+
+##calculate GDD for each year###
+
+Torrington4$year<-as.factor(as.character(Torrington4$year))
+
+
+
+Torringtonbyyear<-Torrington4 %>%mutate(year2=as.factor(as.character(year))) %>% 
+  group_by(year2) %>%
+  group_map(~ gdd(tmax = .x$TMAXC, tmin = .x$TMINC, tbase = 5, tbase_max = 20, type= "C"))
+
+
+
+###
+
+TorringtonGDD  <-  as.data.frame(matrix(unlist(Torringtonbyyear)))
+
+Torringtonbyyeardf<-cbind(Torrington4, GDD=TorringtonGDD )
+
+Torringtonbyyeardf2<-Torringtonbyyeardf %>% mutate(GDD=V1)
+
+
+###plot the GDDs across years##
+
+GDDallyears<-ggplot(data=Torringtonbyyeardf2)+geom_line(data=Torrington2021, aes(Jdate, gdd2021), color="black", size=2)+geom_line(aes(Jdate, GDD, color = as.factor(year)))+ylab("Growing degree days (base = 5c)")
+
+
+```
+
+
+
+```{r GDD histogram }
+
+
+head(Torringtonbyyeardf2)
+
+###day of sampling in 2021 was Jdate 162,  GDD = 622###
+
+GDD600s<-subset(Torringtonbyyeardf2, GDD > 615 & GDD < 630)
+
+unique(GDD600s$year)
+
+hist(GDD600s$Jdate)
+
+```
+
+
