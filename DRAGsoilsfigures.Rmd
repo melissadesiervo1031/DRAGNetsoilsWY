@@ -1,0 +1,54 @@
+---
+title: "Dragsoils_April2023"
+author: Melissa DeSiervo 
+mhdesiervo@gmail.com
+
+Date: April 2023 
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(weathermetrics)
+library(lubridate)
+library(pollen)
+library(here)
+```
+
+
+
+```{r upload soils data }
+
+
+soilsdat <- read.csv(here::here("Dragsoils_April_2023.csv"), header=T)
+
+soilsdat$DATE<-mdy(soilsdat$DATE)
+
+```
+
+
+
+
+```{r Ph and EC graphs}
+
+##subset to just the samples from 5 cm ##
+
+soilsdat15<-subset(soilsdat, Depth==5)
+
+###
+
+##summarize ph and EC by date and by disturbance##
+
+soilsdat15_avg<-soilsdat15%>% group_by(DATE, Disturbance) %>% dplyr::summarise(meanpH=mean(pH, na.rm=TRUE),sdpH=sd(pH, na.rm=TRUE),sepH=sd(pH, na.rm=TRUE)/sqrt(n()), n=n(),meanEC=mean(EC, na.rm=TRUE),sdEC=sd(EC, na.rm=TRUE),seEC=sd(EC, na.rm=TRUE)/sqrt(n()), n=n())
+
+
+## plot average pH over time series###
+
+phTS<-ggplot(data=soilsdat15_avg)+geom_point(aes(DATE, meanpH, group=Disturbance, color=Disturbance))+ylab("pH")+xlab("")+ theme_classic()+ geom_errorbar(aes(x=DATE, ymin=meanpH-sepH, ymax=meanpH+sepH), color="dark gray", size=0.25) 
+
+
+```
+
+
+
+
