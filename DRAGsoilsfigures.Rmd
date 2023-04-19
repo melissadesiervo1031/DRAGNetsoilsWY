@@ -29,25 +29,104 @@ soilsdat$DATE<-mdy(soilsdat$DATE)
 
 
 
-```{r Ph and EC graphs}
+```{r Ph EC Moisture by depth}
 
-##subset to just the samples from 5 cm ##
+##subset to just the samples where we have 5, 10, 15 for depth##
+##	2021-05-24, 2022-05-19###
 
-soilsdat15<-subset(soilsdat, Depth==5)
+
+depthdat<-soilsdat  %>% 
+   filter(DATE == '2021-05-24'| DATE == '2022-05-19') %>%
+   pivot_longer(cols = c("pH","EC", "Moisture")) %>% 
+   mutate(name = factor(name, 
+                           levels = c("pH", "EC", "Moisture")))
 
 ###
 
-##summarize ph and EC by date and by disturbance##
 
-soilsdat15_avg<-soilsdat15%>% group_by(DATE, Disturbance) %>% dplyr::summarise(meanpH=mean(pH, na.rm=TRUE),sdpH=sd(pH, na.rm=TRUE),sepH=sd(pH, na.rm=TRUE)/sqrt(n()), n=n(),meanEC=mean(EC, na.rm=TRUE),sdEC=sd(EC, na.rm=TRUE),seEC=sd(EC, na.rm=TRUE)/sqrt(n()), n=n())
+#soilsdat15_avg<-soilsdat15%>% group_by(DATE, Depth) %>% dplyr::summarise(meanpH=mean(pH, na.rm=TRUE),sdpH=sd(pH, na.rm=TRUE),sepH=sd(pH, na.rm=TRUE)/sqrt(n()), n=n(),meanEC=mean(EC, na.rm=TRUE),sdEC=sd(EC, na.rm=TRUE),seEC=sd(EC, na.rm=TRUE)/sqrt(n()), meanMoist=mean(Moisture, na.rm=TRUE),sdMoist=sd(Moisture, na.rm=TRUE),seMoist=sd(Moisture, na.rm=TRUE)/sqrt(n()), n=n())
+
+
+### ph EC and Moisture by depth## 
+
+   DepthphECmoist<-ggplot(data=depthdat, aes(as.factor(Depth), value)) +      geom_boxplot() +
+     facet_grid( vars(name),vars(DATE), scales="free")+
+     xlab("Depth (cm)")+ylab("")+ theme_bw()+
+     theme(legend.title= element_blank())+theme(strip.text = element_text(hjust = 0.5))
+
+
+pdf(file = "Figures/depthECmoist.pdf",width = 4, height = 5)
+DepthphECmoist
+dev.off()
+   
+   
+   
+```
+
+
+
+```{r Ph EC Moisture time series graphs}
+
+##subset to just the samples from 5 cm ##
+
+soilsdat5<-subset(soilsdat, Depth==5)
+
+##summarize ph EC and Moisture by date and by disturbance##
+
+soilsdat5_avg<-soilsdat15%>% group_by(DATE, Disturbance) %>% dplyr::summarise(meanpH=mean(pH, na.rm=TRUE),sdpH=sd(pH, na.rm=TRUE),sepH=sd(pH, na.rm=TRUE)/sqrt(n()), n=n(),meanEC=mean(EC, na.rm=TRUE),sdEC=sd(EC, na.rm=TRUE),seEC=sd(EC, na.rm=TRUE)/sqrt(n()), meanMoist=mean(Moisture, na.rm=TRUE),sdMoist=sd(Moisture, na.rm=TRUE),seMoist=sd(Moisture, na.rm=TRUE)/sqrt(n()), n=n())
 
 
 ## plot average pH over time series###
 
-phTS<-ggplot(data=soilsdat15_avg)+geom_point(aes(DATE, meanpH, group=Disturbance, color=Disturbance))+ylab("pH")+xlab("")+ theme_classic()+ geom_errorbar(aes(x=DATE, ymin=meanpH-sepH, ymax=meanpH+sepH), color="dark gray", size=0.25) 
+phTS<-ggplot(data=soilsdat5_avg)+geom_point(aes(factor(DATE), meanpH, group=Disturbance, color=Disturbance))+ylab("Soil pH")+xlab("")+ theme_classic()+ geom_errorbar(aes(x=DATE, ymin=meanpH-sepH, ymax=meanpH+sepH), color="dark gray", size=0.25) 
+
+
+## plot average EC over time series###
+
+ECTS<-ggplot(data=soilsdat5_avg)+geom_point(aes(DATE, meanEC, group=Disturbance, color=Disturbance))+ylab("Soil EC")+xlab("")+ theme_classic()+ geom_errorbar(aes(x=DATE, ymin=meanEC-seEC, ymax=meanEC+seEC), color="dark gray", size=0.25) 
+
+
+### plot average moisture over time series ###
+
+MoistTS<-ggplot(data=soilsdat5_avg)+geom_point(aes(DATE, meanMoist, group=Disturbance, color=Disturbance))+ylab("Soil Moisture")+xlab("")+ theme_classic()+ geom_errorbar(aes(x=DATE, ymin=meanMoist-seMoist, ymax=meanMoist+ seMoist), color="dark gray", size=0.25) 
+
+
+
+#### just plotting pre / post disturbance for PH EC and Moist ####
+
+
+Prepostdat<-soilsdat  %>% 
+   filter(DATE > "2022-05-19") %>%
+   pivot_longer(cols = c("pH","EC", "Moisture")) %>% 
+   mutate(identity = case_when(Treatment_future %in% c("NPK + Disturbance", 
+                                                       "Disturbance") ~ "Disturbed",
+                               TRUE ~ "Control")) %>% 
+  mutate(seasonal = case_when(DATE == "2022-08-02" ~ "Pre-Dist",
+                              DATE == "2022-08-09" ~ "Post-Dist 1 week",
+                              DATE == "2022-11-08" ~ "Post-Dist 3 months")) %>% 
+  mutate(seasonal = factor(seasonal, 
+                           levels = c("Pre-Dist", "Post-Dist 1 week", "Post-Dist 3 months"))) %>% 
+  mutate(name = factor(name, 
+                           levels = c("pH", "EC", "Moisture")))
+  
+
+#Graph of ph, EC, Moisture pre/post disturbance
+
+   prepostphECmoist<-ggplot(data=Prepostdat, aes(seasonal, value, color = identity)) + 
+     geom_boxplot() +
+     facet_wrap("name", scales = "free")+
+     xlab("")+ylab("")+ theme_classic()+ theme(axis.text.x = element_text(angle = 45, vjust = 0.4, hjust=0.4))+
+     theme(legend.title= element_blank())
+
+ 
+pdf(file = "Figures/prepostECmoist.pdf",width = 8, height = 4)
+ prepostphECmoist
+dev.off()
+
 
 
 ```
+
 
 
 
