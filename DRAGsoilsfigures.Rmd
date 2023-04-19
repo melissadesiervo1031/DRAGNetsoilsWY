@@ -69,28 +69,30 @@ dev.off()
 
 ##subset to just the samples from 5 cm ##
 
-soilsdat5<-subset(soilsdat, Depth==5)
+soilsdat5control<-subset(soilsdat, Depth==5 & Disturbance == "No")
 
-##summarize ph EC and Moisture by date and by disturbance##
+##summarize ph EC and Moisture by date  non disturbed only##
 
-soilsdat5_avg<-soilsdat15%>% group_by(DATE, Disturbance) %>% dplyr::summarise(meanpH=mean(pH, na.rm=TRUE),sdpH=sd(pH, na.rm=TRUE),sepH=sd(pH, na.rm=TRUE)/sqrt(n()), n=n(),meanEC=mean(EC, na.rm=TRUE),sdEC=sd(EC, na.rm=TRUE),seEC=sd(EC, na.rm=TRUE)/sqrt(n()), meanMoist=mean(Moisture, na.rm=TRUE),sdMoist=sd(Moisture, na.rm=TRUE),seMoist=sd(Moisture, na.rm=TRUE)/sqrt(n()), n=n())
+soilsdat5_avg<-soilsdat5control%>% group_by(DATE) %>% dplyr::summarise(meanpH=mean(pH, na.rm=TRUE),sdpH=sd(pH, na.rm=TRUE),sepH=sd(pH, na.rm=TRUE)/sqrt(n()), n=n(),meanEC=mean(EC, na.rm=TRUE),sdEC=sd(EC, na.rm=TRUE),seEC=sd(EC, na.rm=TRUE)/sqrt(n()), meanMoist=mean(Moisture, na.rm=TRUE),sdMoist=sd(Moisture, na.rm=TRUE),seMoist=sd(Moisture, na.rm=TRUE)/sqrt(n()), n=n())
 
 
 ## plot average pH over time series###
 
-phTS<-ggplot(data=soilsdat5_avg)+geom_point(aes(factor(DATE), meanpH, group=Disturbance, color=Disturbance))+ylab("Soil pH")+xlab("")+ theme_classic()+ geom_errorbar(aes(x=DATE, ymin=meanpH-sepH, ymax=meanpH+sepH), color="dark gray", size=0.25) 
-
+phTS<-ggplot(data=soilsdat5_avg)+geom_point(aes(DATE, meanpH))+ylab("Soil pH")+xlab("")+ theme_classic()+ geom_errorbar(aes(x=DATE, ymin=meanpH-sepH, ymax=meanpH+sepH), color="dark gray", size=0.25) + scale_x_date(date_labels = "%b-%d-%y", date_breaks = "2 months")
++ theme_classic() +theme(axis.text.x=element_text(size=8, angle=45, vjust=0.4,hjust=0.4))
 
 ## plot average EC over time series###
 
-ECTS<-ggplot(data=soilsdat5_avg)+geom_point(aes(DATE, meanEC, group=Disturbance, color=Disturbance))+ylab("Soil EC")+xlab("")+ theme_classic()+ geom_errorbar(aes(x=DATE, ymin=meanEC-seEC, ymax=meanEC+seEC), color="dark gray", size=0.25) 
+ECTS<-ggplot(data=soilsdat5_avg)+geom_point(aes(DATE, meanEC))+ylab("Soil EC")+xlab("")+ theme_classic()+ geom_errorbar(aes(x=DATE, ymin=meanEC-seEC, ymax=meanEC+seEC), color="dark gray", size=0.25) + scale_x_date(date_labels = "%b-%d-%y", date_breaks = "2 months")+ theme_classic() +theme(axis.text.x=element_text(size=8, angle=45, vjust=0.4,hjust=0.4))
 
 
 ### plot average moisture over time series ###
 
-MoistTS<-ggplot(data=soilsdat5_avg)+geom_point(aes(DATE, meanMoist, group=Disturbance, color=Disturbance))+ylab("Soil Moisture")+xlab("")+ theme_classic()+ geom_errorbar(aes(x=DATE, ymin=meanMoist-seMoist, ymax=meanMoist+ seMoist), color="dark gray", size=0.25) 
+MoistTS<-ggplot(data=soilsdat5_avg)+geom_point(aes(DATE, meanMoist))+ylab("Soil Moisture (g h20/ g dry soil)")+xlab("")+ theme_classic()+ geom_errorbar(aes(x=DATE, ymin=meanMoist-seMoist, ymax=meanMoist+seMoist), color="dark gray", size=0.25) + scale_x_date(date_labels = "%b-%d-%y", date_breaks = "2 months")+ theme_classic() +theme(axis.text.x=element_text(size=8, angle=45, vjust=0.4,hjust=0.4))
 
-
+pdf(file = "Figures/MoistTS.pdf",width = 8, height = 3)
+ MoistTS
+dev.off()
 
 #### just plotting pre / post disturbance for PH EC and Moist ####
 

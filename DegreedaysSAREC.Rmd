@@ -11,15 +11,18 @@ library(tidyverse)
 library(weathermetrics)
 library(lubridate)
 library(pollen)
+library(dplyr)
+library(tidyr)
 
 
 ##dates when we sampeled soils###
 
-datessamp <- read.csv("C:/Users/Melissa/Dropbox/Melissa_Lauren_shared_docs/Dragnet local site/Weather near SAREC/SoilSampdates.csv")  ##
+
+datessamp <- read.csv(here::here("SoilSampdates.csv"), header=T)
+
 datessamp$DATE<-as.Date(datessamp$DATE, format='%m/%d/%Y')
 
-
-Torrington <- read.csv("C:/Users/Melissa/Dropbox/Melissa_Lauren_shared_docs/Dragnet local site/Weather near SAREC/Torrington.csv")  ## dim 7683 X 8####
+Torrington <- read.csv(here::here("Torrington.csv"), header=T)
 
 #### remove rows w/ NA for TMAX or TMINF###
 Torrington2 <-Torrington  %>% drop_na(TMAXF)%>% drop_na(TMINF)  ## dim 7639 X 8####
@@ -94,22 +97,23 @@ Tempminmax<-ggplot(data=Torrington2021)+geom_line(aes(Jdate, TMAXC), color="red"
 
 ####calculate GDD for year 2021##
 
-Torrington20212022<-subset(Torrington4, year == "2021"|year=="2022")
+Torrington20212023<-subset(Torrington4, year == "2021"|year=="2022"|year=="2023")
 
-Torrington20212022_2<-subset(Torrington20212022, DATE > "2021-05-01")
+Torrington20212023_2<-subset(Torrington20212022, DATE > "2021-05-01")
 
 ##plot temp min and max##
 
-Torrington20212022_2$Date2 <- ymd(Torrington20212022_2$Date2)
+Torrington20212023_2$Date2 <- ymd(Torrington20212023_2$Date2)
 
 
-Tempminmax<-ggplot(data=Torrington20212022_2)+geom_line(aes(Date2, TMAXC), color="red")+geom_line(aes(Date2, TMINC), color="blue")+ylab("Air Temperature (C)")+xlab("")+ scale_x_date(date_labels = "%b-%d-%y")+geom_vline(data=datessamp, aes(xintercept=datessamp$DATE, color=Season))+ theme_classic() 
+Tempminmax<-ggplot(data=Torrington20212023_2)+geom_line(aes(Date2, TMAXC), color="red")+geom_line(aes(Date2, TMINC), color="blue")+ylab("Air Temperature (C)")+xlab("")+ scale_x_date(date_labels = "%b-%d-%y", date_breaks = "2 months")+geom_vline(data=datessamp, aes(xintercept=datessamp$DATE), color="grey70")+ theme_classic() +theme(axis.text.x=element_text(size=8, angle=45, vjust=0.4,hjust=0.4))
 
 
 
-jpeg("C:/Users/Melissa/Dropbox/Melissa_Lauren_shared_docs/Dragnet local site/Weather near SAREC/Soilsamp.jpeg", width = 6, height = 3, units = 'in', res = 600)
+pdf(file = "Figures/temptimeseries.pdf",width = 6, height = 3)
 Tempminmax
 dev.off()
+   
 
 
 
