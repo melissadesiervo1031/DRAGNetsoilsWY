@@ -78,8 +78,11 @@ soilsdat5_avg<-soilsdat5control%>% group_by(DATE) %>% dplyr::summarise(meanpH=me
 
 ## plot average pH over time series###
 
-phTS<-ggplot(data=soilsdat5_avg)+geom_point(aes(DATE, meanpH))+ylab("Soil pH")+xlab("")+ theme_classic()+ geom_errorbar(aes(x=DATE, ymin=meanpH-sepH, ymax=meanpH+sepH), color="dark gray", size=0.25) + scale_x_date(date_labels = "%b-%d-%y", date_breaks = "2 months")
-+ theme_classic() +theme(axis.text.x=element_text(size=8, angle=45, vjust=0.4,hjust=0.4))
+phTS<-ggplot(data=soilsdat5_avg)+geom_point(aes(DATE, meanpH))+ylab("Soil pH")+xlab("")+ theme_classic()+ geom_errorbar(aes(x=DATE, ymin=meanpH-sepH, ymax=meanpH+sepH), color="dark gray", size=0.25) + scale_x_date(date_labels = "%b-%d-%y", date_breaks = "2 months")+ theme_classic() +theme(axis.text.x=element_text(size=8, angle=45, vjust=0.4,hjust=0.4))
+
+pdf(file = "Figures/phTS.pdf",width = 8, height = 3)
+phTS
+dev.off()
 
 ## plot average EC over time series###
 
